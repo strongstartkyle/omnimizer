@@ -27,11 +27,11 @@ def logout():
 
 # ── Already logged in ──
 if st.session_state.role == "coach":
-    from pages.coach import render_coach
+    from components.coach import render_coach
     render_coach()
 
 elif st.session_state.role == "client":
-    from pages.client import render_client
+    from components.client import render_client
     render_client(
         client_id=st.session_state.client_id,
         client_name=st.session_state.client_name

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase_client import get_supabase
-from pages.client import render_client
+from components.client import render_client
 
 
 def render_coach():
