@@ -3,10 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import io
-import json
 from datetime import datetime, date
 from supabase_client import get_supabase
-from insight_engine import run_engine
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -21,16 +19,6 @@ def load_dashboard_data(sb, client_id: str) -> pd.DataFrame | None:
         return df
     except Exception:
         return None
-
-
-def save_dashboard_cache(sb, client_id: str, df: pd.DataFrame):
-    """Upsert processed CSV to Supabase."""
-    csv_str = df.to_csv(index=False)
-    sb.table("dashboard_cache").upsert({
-        "client_id": client_id,
-        "csv_data": csv_str,
-        "updated_at": datetime.utcnow().isoformat()
-    }).execute()
 
 
 def get_targets(sb, client_id: str) -> dict:
@@ -66,39 +54,11 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                 from app import logout
                 logout()
 
-    # ── Upload section ────────────────────────────────────────────────────────
-    with st.expander("📤 Upload Apple Health Export", expanded=False):
-        st.markdown("""
-        **How to export from your iPhone:**
-        1. Open the **Health** app
-        2. Tap your profile photo (top right)
-        3. Scroll down → **Export All Health Data**
-        4. Share the `.zip` file to yourself, unzip it, then upload `export.xml` below
-        """)
-        uploaded = st.file_uploader("Upload export.xml", type=["xml"], key=f"upload_{client_id}")
-        if uploaded:
-            with st.spinner("Processing your data..."):
-                xml_bytes = uploaded.read()
-                # Store raw XML in Supabase Storage
-                path = f"{client_id}/export.xml"
-                sb.storage.from_("exports").upload(
-                    path, xml_bytes,
-                    file_options={"content-type": "application/xml", "upsert": "true"}
-                )
-                # Run engine
-                df = run_engine(xml_bytes, targets)
-                if df.empty:
-                    st.error("No matching health data found in the file. Please check your export.")
-                else:
-                    save_dashboard_cache(sb, client_id, df)
-                    st.success("Data processed successfully!")
-                    st.rerun()
-
     # ── Load data ─────────────────────────────────────────────────────────────
     df = load_dashboard_data(sb, client_id)
 
     if df is None or df.empty:
-        st.info("No data yet. Upload your Apple Health export above to get started.")
+        st.info("Your dashboard is being set up. Your coach will update this shortly after receiving your Health export.")
         return
 
     latest = df.dropna(subset=["composite_score"]).iloc[-1] if not df.dropna(subset=["composite_score"]).empty else df.iloc[-1]
