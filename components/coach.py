@@ -12,13 +12,13 @@ def render_coach():
     with col1:
         st.title("🏋️ Coach Dashboard")
     with col2:
-        if st.button("Log out", use_container_width=True, key=f"logout_coach"):
+        if st.button("Log out", use_container_width=True, key="coach_logout_main"):
             from app import logout
             logout()
 
     # ── Drill into a specific client ──
     if "viewing_client_id" in st.session_state and st.session_state.viewing_client_id:
-        if st.button("← Back to all clients"):
+        if st.button("← Back to all clients", key="coach_back_btn"):
             st.session_state.viewing_client_id = None
             st.session_state.viewing_client_name = None
             st.rerun()
