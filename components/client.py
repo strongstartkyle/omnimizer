@@ -48,11 +48,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
     col1, col2 = st.columns([6, 1])
     with col1:
         st.title(f"{'📋 ' if coach_mode else ''}{'Client: ' if coach_mode else ''}{client_name}'s Dashboard")
-    with col2:
-        if not coach_mode:
-             if st.button("Log out", use_container_width=True, key=f"logout_({client_id})"):
-                from app import logout
-                logout()
+   
 
     # ── Load data ─────────────────────────────────────────────────────────────
     df = load_dashboard_data(sb, client_id)

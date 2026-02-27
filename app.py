@@ -16,6 +16,14 @@ if "client_id" not in st.session_state:
     st.session_state.client_id = None
 if "client_name" not in st.session_state:
     st.session_state.client_name = None
+# Add this right after the session state defaults section
+if st.session_state.role is not None:
+    with st.sidebar:
+        if st.button("Log out", key="global_logout"):
+            st.session_state.role = None
+            st.session_state.client_id = None
+            st.session_state.client_name = None
+            st.rerun()
 
 
 def logout():

@@ -11,10 +11,7 @@ def render_coach():
     col1, col2 = st.columns([6, 1])
     with col1:
         st.title("🏋️ Coach Dashboard")
-    with col2:
-        if st.button("Log out", use_container_width=True, key="coach_logout_main"):
-            from app import logout
-            logout()
+
 
     # ── Drill into a specific client ──
     if "viewing_client_id" in st.session_state and st.session_state.viewing_client_id:
