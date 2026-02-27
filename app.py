@@ -26,13 +26,6 @@ if st.session_state.role is not None:
             st.rerun()
 
 
-def logout():
-    st.session_state.role = None
-    st.session_state.client_id = None
-    st.session_state.client_name = None
-    st.rerun()
-
-
 # ── Already logged in ──
 if st.session_state.role == "coach":
     from components.coach import render_coach

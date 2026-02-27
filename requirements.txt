@@ -6,3 +6,4 @@ gotrue>=2.0.0
 postgrest>=0.16.0
 realtime>=2.0.0
 storage3>=0.7.0
+python-dotenv>=1.0.0

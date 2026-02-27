@@ -8,9 +8,7 @@ def render_coach():
     sb = get_supabase()
 
     # ── Top bar ──
-    col1, col2 = st.columns([6, 1])
-    with col1:
-        st.title("🏋️ Coach Dashboard")
+    st.title("🏋️ Coach Dashboard")
 
 
     # ── Drill into a specific client ──
@@ -35,18 +33,18 @@ def render_coach():
     if not clients:
         st.info("No clients yet. Add your first client below.")
     else:
+        # Fetch all sync timestamps in one query instead of one per client
+        all_cache = sb.table("dashboard_cache").select("client_id, updated_at").execute()
+        cache_map = {r["client_id"]: r["updated_at"] for r in (all_cache.data or [])}
+
         for c in clients:
             col1, col2, col3 = st.columns([4, 2, 2])
             with col1:
                 st.markdown(f"**{c['name']}**")
                 st.caption(f"PIN: `{c['pin']}`  •  Started: {c.get('created_at', '')[:10]}")
             with col2:
-                # Last upload timestamp
-                cache = sb.table("dashboard_cache").select("updated_at").eq("client_id", c['id']).execute()
-                if cache.data:
-                    st.caption(f"Last sync: {cache.data[0]['updated_at'][:10]}")
-                else:
-                    st.caption("No data yet")
+                last_sync = cache_map.get(c['id'])
+                st.caption(f"Last sync: {last_sync[:10]}" if last_sync else "No data yet")
             with col3:
                 if st.button("View Dashboard", key=f"view_{c['id']}", use_container_width=True):
                     st.session_state.viewing_client_id = c['id']
@@ -70,18 +68,23 @@ def render_coach():
                 if not new_name or len(new_pin) < 6:
                     st.error("Please enter a name and a PIN of at least 6 characters.")
                 else:
-                    targets = {
-                        "calories": t_cal,
-                        "steps": t_steps,
-                        "water": t_water,
-                        "sleep": t_sleep,
-                        "weight_change_pct_per_week": t_wchg
-                    }
-                    sb.table("clients").insert({
-                        "name": new_name,
-                        "pin": new_pin,
-                        "targets": targets,
-                        "active": True
-                    }).execute()
-                    st.success(f"Client **{new_name}** added! Share PIN: `{new_pin}`")
-                    st.rerun()
+                    # Check for duplicate PIN
+                    existing = sb.table("clients").select("id").eq("pin", new_pin).execute()
+                    if existing.data:
+                        st.error("That PIN is already in use. Please choose a different one.")
+                    else:
+                        targets = {
+                            "calories": t_cal,
+                            "steps": t_steps,
+                            "water": t_water,
+                            "sleep": t_sleep,
+                            "weight_change_pct_per_week": t_wchg
+                        }
+                        sb.table("clients").insert({
+                            "name": new_name,
+                            "pin": new_pin,
+                            "targets": targets,
+                            "active": True
+                        }).execute()
+                        st.success(f"Client **{new_name}** added! Share PIN: `{new_pin}`")
+                        st.rerun()

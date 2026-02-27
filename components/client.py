@@ -9,8 +9,15 @@ from supabase_client import get_supabase
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def load_dashboard_data(sb, client_id: str) -> pd.DataFrame | None:
+@st.cache_resource
+def get_supabase_cached():
+    return get_supabase()
+
+
+@st.cache_data(ttl=300)
+def load_dashboard_data(client_id: str) -> pd.DataFrame | None:
     """Load cached processed dashboard CSV from Supabase."""
+    sb = get_supabase_cached()
     res = sb.table("dashboard_cache").select("csv_data").eq("client_id", client_id).execute()
     if not res.data:
         return None
@@ -21,7 +28,9 @@ def load_dashboard_data(sb, client_id: str) -> pd.DataFrame | None:
         return None
 
 
-def get_targets(sb, client_id: str) -> dict:
+@st.cache_data(ttl=300)
+def get_targets(client_id: str) -> dict:
+    sb = get_supabase_cached()
     res = sb.table("clients").select("targets").eq("id", client_id).execute()
     if res.data and res.data[0].get("targets"):
         return res.data[0]["targets"]
@@ -41,8 +50,8 @@ def load_vitamin_logs(sb, client_id: str) -> pd.DataFrame:
 # ── Main render ──────────────────────────────────────────────────────────────
 
 def render_client(client_id: str, client_name: str, coach_mode: bool = False):
-    sb = get_supabase()
-    targets = get_targets(sb, client_id)
+    sb = get_supabase_cached()
+    targets = get_targets(client_id)
 
     # Top bar
     col1, col2 = st.columns([6, 1])
@@ -51,7 +60,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
    
 
     # ── Load data ─────────────────────────────────────────────────────────────
-    df = load_dashboard_data(sb, client_id)
+    df = load_dashboard_data(client_id)
 
     if df is None or df.empty:
         st.info("Your dashboard is being set up. Your coach will update this shortly after receiving your Health export.")
