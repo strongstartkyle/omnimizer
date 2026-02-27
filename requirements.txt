@@ -2,3 +2,7 @@ streamlit>=1.32.0
 pandas>=2.0.0
 plotly>=5.18.0
 supabase>=2.3.0
+gotrue>=2.0.0
+postgrest>=0.16.0
+realtime>=2.0.0
+storage3>=0.7.0
