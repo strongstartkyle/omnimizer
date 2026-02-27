@@ -79,6 +79,7 @@ def parse_xml(xml_bytes: bytes, macrocycle_days: int = 90) -> pd.DataFrame:
     return df.sort_values('date').reset_index(drop=True)
 
 
+
 def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolling_window: int = 14) -> pd.DataFrame:
     """
     Full pipeline: parse → filter → aggregate → rolling avgs → deviations → score → recommend.
