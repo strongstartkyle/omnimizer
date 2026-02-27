@@ -12,7 +12,7 @@ def render_coach():
     with col1:
         st.title("🏋️ Coach Dashboard")
     with col2:
-        if st.button("Log out", use_container_width=True):
+        if st.button("Log out", use_container_width=True, key=f"logout_coach"):
             from app import logout
             logout()
 
