@@ -11,13 +11,13 @@ Usage:
 You will be prompted to select a client and provide the XML file path.
 
 Requirements:
-    pip install pandas supabase
+    pip install pandas supabase python-dotenv
 """
 
 import os
 import sys
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -28,6 +28,11 @@ load_dotenv()
 # =========================
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("ERROR: SUPABASE_URL and SUPABASE_KEY must be set in a .env file.")
+    print("Copy .env.example to .env and fill in your credentials.")
+    sys.exit(1)
 
 # =========================
 # SETUP
@@ -48,7 +53,7 @@ def push_to_supabase(client_id: str, df: pd.DataFrame):
     sb.table("dashboard_cache").upsert({
         "client_id": client_id,
         "csv_data": csv_str,
-        "updated_at": datetime.utcnow().isoformat()
+        "updated_at": datetime.now(timezone.utc).isoformat()
     }).execute()
 
 
@@ -116,7 +121,7 @@ def main():
     print(f"\nPushing to Supabase...")
     push_to_supabase(client["id"], df)
     print(f"   Done! {client['name']}'s dashboard has been updated.")
-    print(f"\n   View at: your-app-url.streamlit.app\n")
+    print(f"\n   View at: your Streamlit dashboard\n")
 
 
 if __name__ == "__main__":
