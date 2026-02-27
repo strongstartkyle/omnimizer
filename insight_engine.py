@@ -24,49 +24,60 @@ SLEEP_VALUES = {"HKCategoryValueSleepAnalysisAsleepCore",
                 "HKCategoryValueSleepAnalysisAsleep"}
 
 
-def parse_xml(xml_bytes: bytes) -> pd.DataFrame:
-    """Parse Apple Health XML bytes into a daily DataFrame."""
-    root = ET.fromstring(xml_bytes)
+def parse_xml(xml_bytes: bytes, macrocycle_days: int = 90) -> pd.DataFrame:
+    """Parse Apple Health XML bytes into a daily DataFrame, ignoring old records."""
+    cutoff = (datetime.now() - timedelta(days=macrocycle_days)).strftime('%Y-%m-%d')
+    
     data = {}
 
-    for record in root.findall('Record'):
-        rec_type = record.attrib.get('type')
-        date_str = record.attrib.get('startDate', '')[:10]
-        if not date_str:
+    # Use iterparse to stream the XML instead of loading it all into memory
+    for event, record in ET.iterparse(io.BytesIO(xml_bytes), events=("end",)):
+        if record.tag != 'Record':
+            record.clear()  # free memory as we go
             continue
+
+        date_str = record.attrib.get('startDate', '')[:10]
+        
+        # Skip records older than our cutoff
+        if date_str < cutoff:
+            record.clear()
+            continue
+
+        rec_type = record.attrib.get('type')
 
         if date_str not in data:
             data[date_str] = {}
 
-        # Standard quantity metrics
         if rec_type in METRICS_MAP:
             metric, agg = METRICS_MAP[rec_type]
             try:
                 value = float(record.attrib['value'])
             except (ValueError, KeyError):
+                record.clear()
                 continue
             if agg == "last":
                 data[date_str][metric] = value
             else:
                 data[date_str][metric] = data[date_str].get(metric, 0) + value
 
-        # Sleep (duration in hours)
         elif rec_type == SLEEP_TYPE:
             val = record.attrib.get('value', '')
-            if val not in SLEEP_VALUES:
-                continue
-            try:
-                start = datetime.fromisoformat(record.attrib['startDate'])
-                end = datetime.fromisoformat(record.attrib['endDate'])
-                hours = (end - start).total_seconds() / 3600
-            except (KeyError, ValueError):
-                continue
-            data[date_str]['sleep'] = data[date_str].get('sleep', 0) + hours
+            if val in SLEEP_VALUES:
+                try:
+                    start = datetime.fromisoformat(record.attrib['startDate'])
+                    end = datetime.fromisoformat(record.attrib['endDate'])
+                    hours = (end - start).total_seconds() / 3600
+                    data[date_str]['sleep'] = data[date_str].get('sleep', 0) + hours
+                except (KeyError, ValueError):
+                    pass
+
+        record.clear()  # free memory after each record
 
     df = pd.DataFrame.from_dict(data, orient='index').reset_index()
     df.rename(columns={'index': 'date'}, inplace=True)
     df['date'] = pd.to_datetime(df['date'])
     return df.sort_values('date').reset_index(drop=True)
+
 
 
 def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolling_window: int = 14) -> pd.DataFrame:
