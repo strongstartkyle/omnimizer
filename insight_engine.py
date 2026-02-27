@@ -9,12 +9,14 @@ import io
 # All supported Apple Health metrics. Add new ones here as needed.
 # =========================
 METRICS_MAP = {
-    "HKQuantityTypeIdentifierStepCount":          ("steps",    "sum"),
     "HKQuantityTypeIdentifierBodyMass":           ("weight",   "last"),
     "HKQuantityTypeIdentifierDietaryEnergyConsumed": ("calories", "sum"),
     "HKQuantityTypeIdentifierDietaryWater":       ("water",    "sum"),
     # Sleep is handled separately via HKCategoryTypeIdentifierSleepAnalysis
+    # Steps are handled separately to deduplicate multiple sources
 }
+
+STEP_TYPE = "HKQuantityTypeIdentifierStepCount"
 
 SLEEP_TYPE = "HKCategoryTypeIdentifierSleepAnalysis"
 # Values that count as actual sleep (not in-bed/awake)
@@ -28,6 +30,8 @@ def parse_xml(xml_bytes: bytes) -> pd.DataFrame:
     """Parse Apple Health XML bytes into a daily DataFrame."""
     root = ET.fromstring(xml_bytes)
     data = {}
+    # Track step totals per source per day: {date_str: {source_name: total}}
+    step_sources = {}
 
     for record in root.findall('Record'):
         rec_type = record.attrib.get('type')
@@ -38,7 +42,17 @@ def parse_xml(xml_bytes: bytes) -> pd.DataFrame:
         if date_str not in data:
             data[date_str] = {}
 
-        if rec_type in METRICS_MAP:
+        if rec_type == STEP_TYPE:
+            try:
+                value = float(record.attrib['value'])
+            except (ValueError, KeyError):
+                continue
+            source = record.attrib.get('sourceName', 'unknown')
+            if date_str not in step_sources:
+                step_sources[date_str] = {}
+            step_sources[date_str][source] = step_sources[date_str].get(source, 0) + value
+
+        elif rec_type in METRICS_MAP:
             metric, agg = METRICS_MAP[rec_type]
             try:
                 value = float(record.attrib['value'])
@@ -60,6 +74,14 @@ def parse_xml(xml_bytes: bytes) -> pd.DataFrame:
                 data[date_str]['sleep'] = data[date_str].get('sleep', 0) + hours
             except (KeyError, ValueError):
                 continue
+
+    # Average step counts across sources, ignoring any source that reported 0
+    for date_str, sources in step_sources.items():
+        non_zero = [v for v in sources.values() if v > 0]
+        if non_zero:
+            if date_str not in data:
+                data[date_str] = {}
+            data[date_str]['steps'] = sum(non_zero) / len(non_zero)
 
     df = pd.DataFrame.from_dict(data, orient='index').reset_index()
     df.rename(columns={'index': 'date'}, inplace=True)

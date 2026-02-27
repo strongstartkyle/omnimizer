@@ -19,12 +19,15 @@ import sys
 import pandas as pd
 from datetime import datetime
 from supabase import create_client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # =========================
-# CONFIG — fill these in once
+# CONFIG — loaded from .env
 # =========================
-SUPABASE_URL = "https://your-project.supabase.co"   # ← your Supabase project URL
-SUPABASE_KEY = "your-anon-key"                       # ← your Supabase anon key
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # =========================
 # SETUP
@@ -50,7 +53,7 @@ def push_to_supabase(client_id: str, df: pd.DataFrame):
 
 
 def main():
-    print("\n💪 Omnimizer — Local Client Data Processor")
+    print("\nOmnimizer - Local Client Data Processor")
     print("=" * 45)
 
     # List clients
@@ -86,7 +89,7 @@ def main():
             print(f"File not found: {xml_path}. Please check the path and try again.")
 
     # Process
-    print(f"\n⏳ Processing {client['name']}'s data...")
+    print(f"\nProcessing {client['name']}'s data...")
     print(f"   File size: {os.path.getsize(xml_path) / 1024 / 1024:.1f} MB")
 
     targets = client.get("targets") or {
@@ -103,16 +106,16 @@ def main():
     df = run_engine(xml_bytes, targets)
 
     if df is None or df.empty:
-        print("❌ No matching health data found in the file. Check the export is valid.")
+        print("ERROR: No matching health data found in the file. Check the export is valid.")
         return
 
-    print(f"   ✅ Parsed {len(df)} days of data")
-    print(f"   📅 Range: {df['date'].min().strftime('%d %b %Y')} → {df['date'].max().strftime('%d %b %Y')}")
+    print(f"   Parsed {len(df)} days of data")
+    print(f"   Range: {df['date'].min().strftime('%d %b %Y')} -> {df['date'].max().strftime('%d %b %Y')}")
 
     # Push to Supabase
-    print(f"\n⬆️  Pushing to Supabase...")
+    print(f"\nPushing to Supabase...")
     push_to_supabase(client["id"], df)
-    print(f"   ✅ Done! {client['name']}'s dashboard has been updated.")
+    print(f"   Done! {client['name']}'s dashboard has been updated.")
     print(f"\n   View at: your-app-url.streamlit.app\n")
 
 
