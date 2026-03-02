@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
 import io
 
@@ -9,12 +10,31 @@ import io
 # All supported Apple Health metrics. Add new ones here as needed.
 # =========================
 METRICS_MAP = {
-    "HKQuantityTypeIdentifierBodyMass":           ("weight",   "last"),
-    "HKQuantityTypeIdentifierDietaryEnergyConsumed": ("calories", "sum"),
-    "HKQuantityTypeIdentifierDietaryWater":       ("water",    "sum"),
+    "HKQuantityTypeIdentifierBodyMass":              ("weight",    "last"),
+    "HKQuantityTypeIdentifierDietaryEnergyConsumed": ("calories",  "sum"),
+    "HKQuantityTypeIdentifierDietaryWater":          ("water",     "sum"),
+    # Vitamins & Minerals — only present if a food tracking app syncs to Apple Health
+    "HKQuantityTypeIdentifierDietaryVitaminA":       ("vit_a",     "sum"),
+    "HKQuantityTypeIdentifierDietaryVitaminC":       ("vit_c",     "sum"),
+    "HKQuantityTypeIdentifierDietaryVitaminD":       ("vit_d",     "sum"),
+    "HKQuantityTypeIdentifierDietaryVitaminB6":      ("vit_b6",    "sum"),
+    "HKQuantityTypeIdentifierDietaryVitaminB12":     ("vit_b12",   "sum"),
+    "HKQuantityTypeIdentifierDietaryIron":           ("iron",      "sum"),
+    "HKQuantityTypeIdentifierDietaryMagnesium":      ("magnesium", "sum"),
+    "HKQuantityTypeIdentifierDietaryZinc":           ("zinc",      "sum"),
+    "HKQuantityTypeIdentifierDietaryCalcium":        ("calcium",   "sum"),
+    "HKQuantityTypeIdentifierDietaryPotassium":      ("potassium", "sum"),
+    "HKQuantityTypeIdentifierDietaryFolate":         ("folate",    "sum"),
+    "HKQuantityTypeIdentifierDietaryOmega3FattyAcids": ("omega3",  "sum"),
     # Sleep is handled separately via HKCategoryTypeIdentifierSleepAnalysis
     # Steps are handled separately to deduplicate multiple sources
 }
+
+# Vitamin/mineral column names (subset of METRICS_MAP values)
+VITAMIN_COLS = [
+    "vit_a", "vit_c", "vit_d", "vit_b6", "vit_b12",
+    "iron", "magnesium", "zinc", "calcium", "potassium", "folate", "omega3",
+]
 
 STEP_TYPE = "HKQuantityTypeIdentifierStepCount"
 
@@ -105,7 +125,7 @@ def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolli
         return df
 
     # Ensure all metric columns exist
-    for col in ['weight', 'calories', 'steps', 'water', 'sleep']:
+    for col in ['weight', 'calories', 'steps', 'water', 'sleep'] + VITAMIN_COLS:
         if col not in df.columns:
             df[col] = float('nan')
 
@@ -116,6 +136,7 @@ def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolli
         'steps': 'sum',
         'water': 'sum',
         'sleep': 'sum',
+        **{col: 'sum' for col in VITAMIN_COLS},
     }
     df = df.groupby('date', as_index=False).agg({k: v for k, v in agg_funcs.items() if k in df.columns})
 
@@ -123,7 +144,7 @@ def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolli
     df['weight'] = df['weight'].ffill().bfill()
 
     # Rolling averages
-    for col in ['weight', 'calories', 'steps', 'water', 'sleep']:
+    for col in ['weight', 'calories', 'steps', 'water', 'sleep'] + VITAMIN_COLS:
         if col in df.columns:
             df[f'{col}_avg'] = df[col].rolling(rolling_window, min_periods=1).mean()
 
@@ -145,36 +166,59 @@ def run_engine(xml_bytes: bytes, targets: dict, macrocycle_days: int = 90, rolli
     df['water_dev'] = (df['water_avg']    - target_water) / target_water * 100
     df['sleep_dev'] = (df['sleep_avg']    - target_sleep) / target_sleep * 100
 
-    # Composite score (weights sum to 1)
-    w = dict(weight=0.35, cal=0.25, steps=0.15, water=0.15, sleep=0.10)
-    df['composite_score'] = (
-        w['weight'] * (df['weight_pct_change'] - target_weight_chg).abs() +
-        w['cal']    * df['cal_dev'].abs() +
-        w['steps']  * df['steps_dev'].abs() +
-        w['water']  * df['water_dev'].abs() +
-        w['sleep']  * df['sleep_dev'].abs()
+    # Sub-scores: 0–100 per metric using exponential decay.
+    # score = 100 × e^(-k × |% deviation|)
+    # k=0.04 means: 10% off → ~67, 20% off → ~45, 30% off → ~30
+    k = 0.04
+    target_2wk = target_weight_chg * 2  # scale weekly target to the 14-day rolling window
+    if target_2wk != 0:
+        weight_pct_dev = (df['weight_pct_change'] - target_2wk).abs() / abs(target_2wk) * 100
+        df['weight_sub'] = 100 * np.exp(-k * weight_pct_dev)
+    else:
+        df['weight_sub'] = float('nan')
+    df['cal_sub']   = 100 * np.exp(-k * df['cal_dev'].abs())
+    df['steps_sub'] = 100 * np.exp(-k * df['steps_dev'].abs())
+    df['water_sub'] = 100 * np.exp(-k * df['water_dev'].abs())
+    df['sleep_sub'] = 100 * np.exp(-k * df['sleep_dev'].abs())
+
+    # Composite wellness score (0–100, higher = better)
+    sub_weights = pd.Series({'weight_sub': 0.35, 'cal_sub': 0.25, 'steps_sub': 0.15,
+                              'water_sub': 0.15, 'sleep_sub': 0.10})
+    subs = df[sub_weights.index.tolist()]
+    df['composite_score'] = subs.apply(
+        lambda row: (row * sub_weights).sum() / sub_weights[row.notna()].sum()
+        if row.notna().any() else float('nan'),
+        axis=1
     )
 
     # Recommendations
-    TOLERANCE = 0.3
+    GOOD    = 80  # on track
+    MONITOR = 65  # minor drift
 
     def recommend(row):
-        if pd.isna(row['composite_score']) or pd.isna(row['weight_pct_change']):
+        if pd.isna(row['composite_score']):
             return "Insufficient data"
         score = row['composite_score']
         wchg  = row['weight_pct_change']
-        if score < TOLERANCE:
+
+        if score >= GOOD:
             return "✅ Behaviours aligned → hold steady"
-        elif wchg > target_weight_chg + TOLERANCE:
-            return "🔽 Loss too slow → reduce calories slightly"
-        elif wchg < target_weight_chg - TOLERANCE:
-            return "🔼 Loss too aggressive → increase calories slightly"
-        elif row.get('sleep_dev', 0) < -20:
-            return "😴 Sleep deficit detected → prioritise recovery"
-        elif row.get('water_dev', 0) < -20:
-            return "💧 Under-hydrated → increase daily water intake"
-        else:
+
+        if pd.notna(wchg):
+            if wchg > target_2wk + 0.5:
+                return "🔽 Loss too slow → reduce calories slightly"
+            if wchg < target_2wk - 0.5:
+                return "🔼 Loss too aggressive → increase calories slightly"
+
+        if score >= MONITOR:
             return "👀 Monitor trend → small adjustments if needed"
+
+        # Score < 65 — surface the worst offender
+        if pd.notna(row.get('sleep_dev')) and row['sleep_dev'] < -20:
+            return "😴 Sleep deficit detected → prioritise recovery"
+        if pd.notna(row.get('water_dev')) and row['water_dev'] < -20:
+            return "💧 Under-hydrated → increase daily water intake"
+        return "👀 Monitor trend → small adjustments if needed"
 
     df['recommendation'] = df.apply(recommend, axis=1)
 
