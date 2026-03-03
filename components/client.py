@@ -313,7 +313,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             ah_df = ah_df.rename(columns={col: f"{name} ({unit})" for col, (name, unit) in available.items()} | {"date": "Date"})
             for col in ah_df.columns:
                 if col != "Date":
-                    ah_df[col] = ah_df[col].replace(0, None)
+                    ah_df[col] = pd.to_numeric(ah_df[col], errors='coerce').round(2).replace(0, None)
             st.dataframe(ah_df.reset_index(drop=True), use_container_width=True, hide_index=True)
 
     # ── TAB 4: RECOMMENDATIONS ────────────────────────────────────────────────
@@ -362,10 +362,12 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         # Full recommendation history
         st.subheader("Daily Recommendation History")
-        rec_df = df[['date', 'period_label', 'weight_avg', 'calories_avg', 'steps_avg', 'recommendation']].copy()
+        rec_df = df[['date', 'period_label', 'weight', 'calories_avg', 'steps_avg', 'recommendation']].copy()
         rec_df = rec_df[rec_df['recommendation'].notna() & (rec_df['recommendation'] != "Insufficient data")]
         rec_df['date'] = rec_df['date'].dt.strftime('%d %b %Y')
-        rec_df.columns = ['Date', 'Period', 'Avg Weight', 'Avg Calories', 'Avg Steps', 'Recommendation']
+        for col in ['weight', 'calories_avg', 'steps_avg']:
+            rec_df[col] = rec_df[col].round(2)
+        rec_df.columns = ['Date', 'Period', 'Weight (kg)', 'Avg Calories', 'Avg Steps', 'Recommendation']
         st.dataframe(rec_df.iloc[::-1].reset_index(drop=True), use_container_width=True)
 
     # ── TAB 5: COMPOSITE SCORE ────────────────────────────────────────────────
