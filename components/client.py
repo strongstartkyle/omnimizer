@@ -11,7 +11,6 @@ _DARK = dict(
     paper_bgcolor='#1C1C1C',
     plot_bgcolor='#1C1C1C',
     font=dict(color='#F5F5F5', family='Barlow, sans-serif'),
-    legend=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='#787878', size=11)),
 )
 _AX = dict(
     gridcolor='rgba(255,255,255,0.06)',
