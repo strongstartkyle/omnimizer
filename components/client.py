@@ -19,6 +19,37 @@ _AX = dict(
     zerolinecolor='rgba(255,255,255,0.06)',
 )
 
+# ── SVG icon constants (stroke=#787878, Axiom muted tone) ─────────────────────
+_SVG_WEIGHT    = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="12" y1="6" x2="12" y2="21"/><path d="M6 6L4 13a2 2 0 0 0 4 0L6 6"/><path d="M18 6l-2 7a2 2 0 0 0 4 0l-2-7"/></svg>'
+_SVG_CALORIES  = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+_SVG_STEPS     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="8"/></svg>'
+_SVG_SLEEP     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+_SVG_HYDRATION = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>'
+_SVG_VITAMINS  = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="9" width="15" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15"/></svg>'
+_SVG_RECS      = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>'
+_SVG_SCORE     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
+_SVG_MACROCYCLE= '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+_SVG_APPLE     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1 3H9c-.5-.5-1-1.5-1-3a4 4 0 0 1 4-4z"/><path d="M4 9h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>'
+_SVG_COACH     = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#787878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+
+
+def _header(svg: str, title: str, level: str = "sub") -> None:
+    """Render a styled section header with SVG icon and red accent bar."""
+    if level == "h":
+        fs, bar_h, mt, fw = "26px", "26px", "28px", "800"
+    else:
+        fs, bar_h, mt, fw = "18px", "18px", "20px", "700"
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:10px;margin:{mt} 0 4px 0;">'
+        f'<div style="width:2px;height:{bar_h};background:#C8102E;flex-shrink:0;"></div>'
+        f'{svg}'
+        f'<span style="font-family:\'Barlow Condensed\',sans-serif;font-weight:{fw};font-size:{fs};'
+        f'text-transform:uppercase;letter-spacing:0.06em;color:#F5F5F5;line-height:1;">{title}</span>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 @st.cache_resource
@@ -68,7 +99,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
     # Top bar
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.title(f"{'📋 ' if coach_mode else ''}{'Client: ' if coach_mode else ''}{client_name}'s Dashboard")
+        st.title(f"{'Client: ' if coach_mode else ''}{client_name}'s Dashboard")
    
 
     # ── Load data ─────────────────────────────────────────────────────────────
@@ -86,22 +117,22 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         st.caption(f"{df['date'].min().strftime('%d %b')} → {df['date'].max().strftime('%d %b %Y')}")
         st.markdown("---")
         st.markdown("**Targets**")
-        st.caption(f"🔥 Calories: {targets.get('calories', '—')} kcal")
-        st.caption(f"👟 Steps: {targets.get('steps', '—'):,}")
-        st.caption(f"💧 Water: {targets.get('water', '—')} ml")
-        st.caption(f"😴 Sleep: {targets.get('sleep', '—')} hrs")
+        st.caption(f"Calories: {targets.get('calories', '—')} kcal")
+        st.caption(f"Steps: {targets.get('steps', '—'):,}")
+        st.caption(f"Water: {targets.get('water', '—')} ml")
+        st.caption(f"Sleep: {targets.get('sleep', '—')} hrs")
         st.markdown("---")
         st.markdown("**Latest Recommendation**")
         st.info(latest.get("recommendation", "N/A"))
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "📈 Charts",
-        "💧 Hydration",
-        "💊 Vitamins & Minerals",
-        "📋 Recommendations",
-        "🎯 Composite Score",
-        "🗓️ Macrocycle"
+        "Charts",
+        "Hydration",
+        "Vitamins & Minerals",
+        "Recommendations",
+        "Composite Score",
+        "Macrocycle"
     ])
 
     # ── TAB 1: CHARTS ─────────────────────────────────────────────────────────
@@ -110,7 +141,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         rolling_window = 14
 
         # Weight
-        st.subheader("⚖️ Weight")
+        _header(_SVG_WEIGHT, "Weight")
         fig_w = go.Figure()
         fig_w.add_trace(go.Scatter(x=df['date'], y=df['weight'], name='Daily', mode='lines',
                                    line=dict(color='rgba(200,16,46,0.35)', width=1), opacity=0.8))
@@ -125,16 +156,16 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         target_wchg_2wk = targets.get('weight_change_pct_per_week', -0.75) * 2
         if pd.notna(wchg):
             if abs(wchg - target_wchg_2wk) <= 0.3:
-                st.success(f"✅ Weight trending as planned — {wchg:.2f}% change over 14 days (goal: {target_wchg_2wk:.2f}%)")
+                st.success(f"→ Weight trending as planned — {wchg:.2f}% change over 14 days (goal: {target_wchg_2wk:.2f}%)")
             elif wchg > target_wchg_2wk:
-                st.warning(f"⚠️ Weight loss slower than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
+                st.warning(f"◆ Weight loss slower than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
             else:
-                st.warning(f"⚠️ Weight dropping faster than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
+                st.warning(f"◆ Weight dropping faster than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
 
         c1, c2 = st.columns(2)
 
         with c1:
-            st.subheader("🔥 Calories")
+            _header(_SVG_CALORIES, "Calories")
             fig_c = go.Figure()
             fig_c.add_trace(go.Bar(x=df['date'], y=df['calories'], name='Daily', marker_color='rgba(200,16,46,0.3)', opacity=0.8))
             fig_c.add_trace(go.Scatter(x=df['date'], y=df['calories_avg'], name='14-Day Avg', mode='lines',
@@ -151,14 +182,14 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             days_on_cal = (df['calories'].tail(14).between(target_cal * 0.9, target_cal * 1.1)).sum()
             if pd.notna(cal_dev):
                 if abs(cal_dev) <= 5:
-                    st.success(f"✅ Calories on target — {cal_avg:.0f} kcal avg, {days_on_cal}/14 days within 10%")
+                    st.success(f"→ Calories on target — {cal_avg:.0f} kcal avg, {days_on_cal}/14 days within 10%")
                 elif cal_dev < 0:
-                    st.warning(f"⚠️ {abs(cal_dev):.1f}% below target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
+                    st.warning(f"◆ {abs(cal_dev):.1f}% below target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
                 else:
-                    st.warning(f"⚠️ {cal_dev:.1f}% above target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
+                    st.warning(f"◆ {cal_dev:.1f}% above target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
 
         with c2:
-            st.subheader("👟 Steps")
+            _header(_SVG_STEPS, "Steps")
             fig_s = go.Figure()
             fig_s.add_trace(go.Bar(x=df['date'], y=df['steps'], name='Daily', marker_color='rgba(245,245,245,0.12)', opacity=0.8))
             fig_s.add_trace(go.Scatter(x=df['date'], y=df['steps_avg'], name='14-Day Avg', mode='lines',
@@ -175,13 +206,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             days_on_steps = (df['steps'].tail(14) >= target_steps).sum()
             if pd.notna(steps_dev):
                 if steps_dev >= 0:
-                    st.success(f"✅ Hitting step target — {steps_avg:.0f} avg, {days_on_steps}/14 days at or above goal")
+                    st.success(f"→ Hitting step target — {steps_avg:.0f} avg, {days_on_steps}/14 days at or above goal")
                 else:
-                    st.warning(f"⚠️ {abs(steps_dev):.1f}% below step target — {steps_avg:.0f} avg vs {target_steps:,} goal, {days_on_steps}/14 days met")
+                    st.warning(f"◆ {abs(steps_dev):.1f}% below step target — {steps_avg:.0f} avg vs {target_steps:,} goal, {days_on_steps}/14 days met")
 
         # Sleep
         if 'sleep_avg' in df.columns:
-            st.subheader("😴 Sleep")
+            _header(_SVG_SLEEP, "Sleep")
             fig_sl = go.Figure()
             fig_sl.add_trace(go.Bar(x=df['date'], y=df['sleep'], name='Daily', marker_color='rgba(120,120,120,0.25)', opacity=0.8))
             fig_sl.add_trace(go.Scatter(x=df['date'], y=df['sleep_avg'], name='14-Day Avg', mode='lines',
@@ -198,13 +229,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             days_on_sleep = (df['sleep'].tail(14) >= target_sleep * 0.9).sum()
             if pd.notna(sleep_dev) and pd.notna(sleep_avg):
                 if sleep_dev >= -5:
-                    st.success(f"✅ Sleep on track — {sleep_avg:.1f} hrs avg, {days_on_sleep}/14 days meeting target")
+                    st.success(f"→ Sleep on track — {sleep_avg:.1f} hrs avg, {days_on_sleep}/14 days meeting target")
                 else:
-                    st.warning(f"⚠️ {abs(sleep_dev):.1f}% below sleep target — {sleep_avg:.1f} hrs avg vs {target_sleep} goal, {days_on_sleep}/14 days met")
+                    st.warning(f"◆ {abs(sleep_dev):.1f}% below sleep target — {sleep_avg:.1f} hrs avg vs {target_sleep} goal, {days_on_sleep}/14 days met")
 
     # ── TAB 2: HYDRATION ──────────────────────────────────────────────────────
     with tab2:
-        st.header("💧 Hydration")
+        _header(_SVG_HYDRATION, "Hydration", "h")
         target_water = targets.get('water', 2500)
 
         if 'water_avg' not in df.columns or df['water'].isna().all():
@@ -234,7 +265,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
     # ── TAB 3: VITAMINS & MINERALS ────────────────────────────────────────────
     with tab3:
-        st.header("💊 Vitamins & Minerals")
+        _header(_SVG_VITAMINS, "Vitamins & Minerals", "h")
 
         vitamin_logs = load_vitamin_logs(sb, client_id)
 
@@ -252,7 +283,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         }
 
         # ── Log form ──────────────────────────────────────────────────────────
-        with st.expander("➕ Add Today's Entry", expanded=True):
+        with st.expander("+ Add Today's Entry", expanded=True):
             with st.form("vitamin_form"):
                 log_date = st.date_input("Date", value=date.today())
                 col1, col2 = st.columns(2)
@@ -355,7 +386,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         if available:
             st.divider()
-            st.subheader("🍎 From Apple Health")
+            _header(_SVG_APPLE, "From Apple Health")
             st.caption("Micronutrient data synced from your food tracking app.")
 
             metric_cols = st.columns(min(4, len(available)))
@@ -377,7 +408,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
     # ── TAB 4: RECOMMENDATIONS ────────────────────────────────────────────────
     with tab4:
-        st.header("📋 Recommendations")
+        _header(_SVG_RECS, "Recommendations", "h")
 
         # Latest metrics summary
         c1, c2, c3, c4 = st.columns(4)
@@ -394,7 +425,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         st.divider()
 
         # Coach annotations (visible to both)
-        st.subheader("📝 Coach Annotations")
+        _header(_SVG_COACH, "Coach Annotations")
         annotations = load_annotations(sb, client_id)
 
         if coach_mode:
@@ -431,7 +462,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
     # ── TAB 5: COMPOSITE SCORE ────────────────────────────────────────────────
     with tab5:
-        st.header("🎯 Composite Score")
+        _header(_SVG_SCORE, "Composite Score", "h")
         st.caption("0–100 wellness score. Higher = better. Reflects how closely behaviours match all targets.")
 
         fig_cs = go.Figure()
@@ -464,11 +495,11 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                    "Low sub-scores show exactly where to focus.")
 
         SUB_META = {
-            'weight_sub': ('⚖️ Weight',  'weight_pct_change', '35%'),
-            'cal_sub':    ('🔥 Calories', 'cal_dev',           '25%'),
-            'steps_sub':  ('👟 Steps',    'steps_dev',         '15%'),
-            'water_sub':  ('💧 Water',    'water_dev',         '15%'),
-            'sleep_sub':  ('😴 Sleep',    'sleep_dev',         '10%'),
+            'weight_sub': ('Weight',   'weight_pct_change', '35%'),
+            'cal_sub':    ('Calories', 'cal_dev',           '25%'),
+            'steps_sub':  ('Steps',    'steps_dev',         '15%'),
+            'water_sub':  ('Water',    'water_dev',         '15%'),
+            'sleep_sub':  ('Sleep',    'sleep_dev',         '10%'),
         }
 
         # Latest sub-score cards
@@ -513,7 +544,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
     # ── TAB 6: MACROCYCLE ─────────────────────────────────────────────────────
     with tab6:
-        st.header("🗓️ Macrocycle Overview")
+        _header(_SVG_MACROCYCLE, "Macrocycle Overview", "h")
         st.caption("3-month macrocycle split into 2-week observation periods.")
 
         periods = df.groupby('period_label').agg(
