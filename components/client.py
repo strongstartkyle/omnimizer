@@ -362,12 +362,12 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         # Full recommendation history
         st.subheader("Daily Recommendation History")
-        rec_df = df[['date', 'period_label', 'weight', 'calories_avg', 'steps_avg', 'recommendation']].copy()
+        rec_df = df[['date', 'period_label', 'weight', 'calories', 'steps', 'recommendation']].copy()
         rec_df = rec_df[rec_df['recommendation'].notna() & (rec_df['recommendation'] != "Insufficient data")]
         rec_df['date'] = rec_df['date'].dt.strftime('%d %b %Y')
-        for col in ['weight', 'calories_avg', 'steps_avg']:
+        for col in ['weight', 'calories', 'steps']:
             rec_df[col] = rec_df[col].round(2)
-        rec_df.columns = ['Date', 'Period', 'Weight (lb)', 'Avg Calories', 'Avg Steps', 'Recommendation']
+        rec_df.columns = ['Date', 'Period', 'Weight (lb)', 'Calories', 'Steps', 'Recommendation']
         st.dataframe(rec_df.iloc[::-1].reset_index(drop=True), use_container_width=True)
 
     # ── TAB 5: COMPOSITE SCORE ────────────────────────────────────────────────
