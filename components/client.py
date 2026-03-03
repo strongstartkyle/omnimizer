@@ -104,7 +104,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                                    line=dict(color='lightblue', width=1), opacity=0.5))
         fig_w.add_trace(go.Scatter(x=df['date'], y=df['weight_avg'], name='14-Day Avg', mode='lines',
                                    line=dict(color='royalblue', width=2.5)))
-        fig_w.update_layout(xaxis_title="Date", yaxis_title="kg", hovermode="x unified", height=320,
+        fig_w.update_layout(xaxis_title="Date", yaxis_title="lb", hovermode="x unified", height=320,
                             legend=dict(orientation="h", y=1.1))
         st.plotly_chart(fig_w, use_container_width=True)
 
@@ -322,7 +322,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         # Latest metrics summary
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Avg Weight (14d)", f"{latest.get('weight_avg', 0):.1f} kg",
+        c1.metric("Avg Weight (14d)", f"{latest.get('weight_avg', 0):.1f} lb",
                   f"{latest.get('weight_pct_change', 0):.2f}% change" if pd.notna(latest.get('weight_pct_change')) else "N/A")
         c2.metric("Avg Calories (14d)", f"{latest.get('calories_avg', 0):.0f} kcal",
                   f"{latest.get('cal_dev', 0):.1f}% vs target" if pd.notna(latest.get('cal_dev')) else "N/A")
@@ -367,7 +367,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         rec_df['date'] = rec_df['date'].dt.strftime('%d %b %Y')
         for col in ['weight', 'calories_avg', 'steps_avg']:
             rec_df[col] = rec_df[col].round(2)
-        rec_df.columns = ['Date', 'Period', 'Weight (kg)', 'Avg Calories', 'Avg Steps', 'Recommendation']
+        rec_df.columns = ['Date', 'Period', 'Weight (lb)', 'Avg Calories', 'Avg Steps', 'Recommendation']
         st.dataframe(rec_df.iloc[::-1].reset_index(drop=True), use_container_width=True)
 
     # ── TAB 5: COMPOSITE SCORE ────────────────────────────────────────────────
@@ -470,7 +470,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         for _, row in periods.iterrows():
             with st.expander(f"**{row['period_label']}** &nbsp; {row['Date Range']}", expanded=False):
                 c1, c2, c3, c4, c5 = st.columns(5)
-                c1.metric("Avg Weight", f"{row['Avg_Weight']:.1f} kg",
+                c1.metric("Avg Weight", f"{row['Avg_Weight']:.1f} lb",
                           f"{row['Weight_Change']:.2f}%" if pd.notna(row['Weight_Change']) else "N/A")
                 c2.metric("Avg Calories", f"{row['Avg_Calories']:.0f} kcal")
                 c3.metric("Avg Steps", f"{row['Avg_Steps']:.0f}")
@@ -483,6 +483,6 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         # Cross-period weight trend
         fig_pw = px.line(df, x='date', y='weight_avg', color='period_label',
                          title="Weight Trend Across Periods",
-                         labels={'weight_avg': 'Avg Weight (kg)', 'date': 'Date', 'period_label': 'Period'})
+                         labels={'weight_avg': 'Avg Weight (lb)', 'date': 'Date', 'period_label': 'Period'})
         fig_pw.update_layout(height=340, hovermode="x unified")
         st.plotly_chart(fig_pw, use_container_width=True)
