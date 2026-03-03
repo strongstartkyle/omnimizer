@@ -177,167 +177,137 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
     with tab3:
         st.header("💊 Vitamins & Minerals")
 
-        subtab_log, subtab_ah = st.tabs(["📝 My Supplement Log", "🍎 From Apple Health"])
+        vitamin_logs = load_vitamin_logs(sb, client_id)
 
-        # ── SUB-TAB: MY SUPPLEMENT LOG ────────────────────────────────────────
-        with subtab_log:
-            st.caption("Log your daily supplementation here. Your coach can view these entries.")
+        # Column metadata: {db_col: (display_label, unit)}
+        LOG_COLS = {
+            "vitamin_d":   ("Vit D",   "IU"),
+            "vitamin_c":   ("Vit C",   "mg"),
+            "vitamin_b12": ("B12",     "mcg"),
+            "omega3":      ("Omega-3", "mg"),
+            "magnesium":   ("Mg",      "mg"),
+            "zinc":        ("Zn",      "mg"),
+            "iron":        ("Fe",      "mg"),
+        }
 
-            vitamin_logs = load_vitamin_logs(sb, client_id)
+        # ── Log form ──────────────────────────────────────────────────────────
+        with st.expander("➕ Add Today's Entry", expanded=True):
+            with st.form("vitamin_form"):
+                log_date = st.date_input("Date", value=date.today())
+                col1, col2 = st.columns(2)
+                with col1:
+                    vit_d    = st.number_input("Vitamin D (IU)",    min_value=0, step=100, value=0)
+                    vit_c    = st.number_input("Vitamin C (mg)",     min_value=0, step=50,  value=0)
+                    vit_b12  = st.number_input("Vitamin B12 (mcg)", min_value=0, step=10,  value=0)
+                    omega3   = st.number_input("Omega-3 (mg)",      min_value=0, step=100, value=0)
+                with col2:
+                    magnesium = st.number_input("Magnesium (mg)", min_value=0, step=50, value=0)
+                    zinc      = st.number_input("Zinc (mg)",      min_value=0, step=5,  value=0)
+                    iron      = st.number_input("Iron (mg)",      min_value=0, step=5,  value=0)
+                    other     = st.text_input("Other (free text)")
+                notes = st.text_area("Notes", placeholder="e.g. took with food, forgot evening dose...")
+                submitted = st.form_submit_button("Save Entry")
 
-            # Column metadata: {db_col: (display_label, unit)}
-            LOG_COLS = {
-                "vitamin_d":  ("Vit D",   "IU"),
-                "vitamin_c":  ("Vit C",   "mg"),
-                "vitamin_b12": ("B12",    "mcg"),
-                "omega3":     ("Omega-3", "mg"),
-                "magnesium":  ("Mg",      "mg"),
-                "zinc":       ("Zn",      "mg"),
-                "iron":       ("Fe",      "mg"),
-            }
+                if submitted:
+                    entry = {
+                        "client_id": client_id,
+                        "date": str(log_date),
+                        "vitamin_d": vit_d,
+                        "vitamin_c": vit_c,
+                        "vitamin_b12": vit_b12,
+                        "omega3": omega3,
+                        "magnesium": magnesium,
+                        "zinc": zinc,
+                        "iron": iron,
+                        "other": other,
+                        "notes": notes,
+                    }
+                    sb.table("vitamin_logs").upsert(entry, on_conflict="client_id,date").execute()
+                    st.success("Entry saved!")
+                    st.rerun()
 
-            # Log form
-            with st.expander("➕ Add Today's Entry", expanded=True):
-                with st.form("vitamin_form"):
-                    log_date = st.date_input("Date", value=date.today())
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        vit_d    = st.number_input("Vitamin D (IU)",  min_value=0, step=100, value=0)
-                        vit_c    = st.number_input("Vitamin C (mg)",   min_value=0, step=50,  value=0)
-                        vit_b12  = st.number_input("Vitamin B12 (mcg)", min_value=0, step=10, value=0)
-                        omega3   = st.number_input("Omega-3 (mg)",    min_value=0, step=100, value=0)
-                    with col2:
-                        magnesium = st.number_input("Magnesium (mg)", min_value=0, step=50, value=0)
-                        zinc      = st.number_input("Zinc (mg)",      min_value=0, step=5,  value=0)
-                        iron      = st.number_input("Iron (mg)",      min_value=0, step=5,  value=0)
-                        other     = st.text_input("Other (free text)")
-                    notes = st.text_area("Notes", placeholder="e.g. took with food, forgot evening dose...")
-                    submitted = st.form_submit_button("Save Entry")
+        # ── Supplement log history ─────────────────────────────────────────────
+        if vitamin_logs.empty:
+            st.info("No entries yet. Use the form above to log your supplements.")
+        else:
+            vitamin_logs["date"] = pd.to_datetime(vitamin_logs["date"])
 
-                    if submitted:
-                        entry = {
-                            "client_id": client_id,
-                            "date": str(log_date),
-                            "vitamin_d": vit_d,
-                            "vitamin_c": vit_c,
-                            "vitamin_b12": vit_b12,
-                            "omega3": omega3,
-                            "magnesium": magnesium,
-                            "zinc": zinc,
-                            "iron": iron,
-                            "other": other,
-                            "notes": notes,
-                        }
-                        sb.table("vitamin_logs").upsert(entry, on_conflict="client_id,date").execute()
-                        st.success("Entry saved!")
-                        st.rerun()
-
-            if vitamin_logs.empty:
-                st.info("No entries yet. Use the form above to log your supplements.")
+            st.subheader("Supplement Log")
+            filter_opt = st.radio("Show", ["Last 7 days", "Last 14 days", "Last 30 days", "All time"],
+                                  horizontal=True, label_visibility="collapsed")
+            day_map = {"Last 7 days": 7, "Last 14 days": 14, "Last 30 days": 30}
+            if filter_opt in day_map:
+                cutoff = pd.Timestamp.today() - pd.Timedelta(days=day_map[filter_opt])
+                filtered = vitamin_logs[vitamin_logs["date"] >= cutoff].copy()
             else:
-                vitamin_logs["date"] = pd.to_datetime(vitamin_logs["date"])
+                filtered = vitamin_logs.copy()
 
-                # ── Date filter ───────────────────────────────────────────────
-                st.subheader("Log History")
-                filter_opt = st.radio("Show", ["Last 7 days", "Last 14 days", "Last 30 days", "All time"],
-                                      horizontal=True, label_visibility="collapsed")
-                day_map = {"Last 7 days": 7, "Last 14 days": 14, "Last 30 days": 30}
-                if filter_opt in day_map:
-                    cutoff = pd.Timestamp.today() - pd.Timedelta(days=day_map[filter_opt])
-                    filtered = vitamin_logs[vitamin_logs["date"] >= cutoff].copy()
-                else:
-                    filtered = vitamin_logs.copy()
+            # 14-day averages
+            recent14 = vitamin_logs[vitamin_logs["date"] >= pd.Timestamp.today() - pd.Timedelta(days=14)]
+            num_cols = [c for c in LOG_COLS if c in recent14.columns]
+            avgs = {c: recent14[c][recent14[c] > 0].mean() for c in num_cols}
+            if any(pd.notna(v) and v > 0 for v in avgs.values()):
+                st.caption("14-day averages (logged days only)")
+                avg_cols = st.columns(len(num_cols))
+                for i, col in enumerate(num_cols):
+                    label, unit = LOG_COLS[col]
+                    val = avgs[col]
+                    avg_cols[i].metric(label, f"{val:.0f} {unit}" if pd.notna(val) and val > 0 else "—")
 
-                # ── 7-day averages ────────────────────────────────────────────
-                recent14 = vitamin_logs[vitamin_logs["date"] >= pd.Timestamp.today() - pd.Timedelta(days=14)]
-                num_cols = [c for c in LOG_COLS if c in recent14.columns]
-                avgs = {c: recent14[c][recent14[c] > 0].mean() for c in num_cols}
-                if any(pd.notna(v) and v > 0 for v in avgs.values()):
-                    st.caption("14-day averages (days where you logged something)")
-                    avg_cols = st.columns(len(num_cols))
-                    for i, col in enumerate(num_cols):
-                        label, unit = LOG_COLS[col]
-                        val = avgs[col]
-                        avg_cols[i].metric(f"{label}", f"{val:.0f} {unit}" if pd.notna(val) and val > 0 else "—")
-                    st.divider()
+            # History table
+            display_cols = ["date"] + [c for c in LOG_COLS if c in filtered.columns] + \
+                           [c for c in ("other", "notes") if c in filtered.columns]
+            display_df = filtered[display_cols].sort_values("date", ascending=False).copy()
+            display_df["date"] = display_df["date"].dt.strftime("%d %b %Y")
+            for col in num_cols:
+                if col in display_df.columns:
+                    display_df[col] = display_df[col].replace(0, None)
+            col_rename = {"date": "Date", "other": "Other", "notes": "Notes"}
+            col_rename.update({c: f"{lbl} ({unit})" for c, (lbl, unit) in LOG_COLS.items()})
+            display_df = display_df.rename(columns=col_rename)
+            st.dataframe(display_df.reset_index(drop=True), use_container_width=True, hide_index=True)
 
-                # ── History table ─────────────────────────────────────────────
-                display_cols = ["date"] + [c for c in LOG_COLS if c in filtered.columns] + \
-                               [c for c in ("other", "notes") if c in filtered.columns]
-                display_df = filtered[display_cols].sort_values("date", ascending=False).copy()
-                display_df["date"] = display_df["date"].dt.strftime("%d %b %Y")
+        # ── Apple Health vitamins (shown if data exists in export) ─────────────
+        AH_VITAMINS = {
+            "vit_a":     ("Vitamin A",   "mcg"),
+            "vit_c":     ("Vitamin C",   "mg"),
+            "vit_d":     ("Vitamin D",   "mcg"),
+            "vit_b6":    ("Vitamin B6",  "mg"),
+            "vit_b12":   ("Vitamin B12", "mcg"),
+            "iron":      ("Iron",        "mg"),
+            "magnesium": ("Magnesium",   "mg"),
+            "zinc":      ("Zinc",        "mg"),
+            "calcium":   ("Calcium",     "mg"),
+            "potassium": ("Potassium",   "mg"),
+            "folate":    ("Folate",      "mcg"),
+            "omega3":    ("Omega-3",     "g"),
+        }
+        available = {
+            col: info for col, info in AH_VITAMINS.items()
+            if col in df.columns and df[col].notna().any() and df[col].sum() > 0
+        }
 
-                # Replace 0 with None so cells appear blank
-                for col in num_cols:
-                    if col in display_df.columns:
-                        display_df[col] = display_df[col].replace(0, None)
+        if available:
+            st.divider()
+            st.subheader("🍎 From Apple Health")
+            st.caption("Micronutrient data synced from your food tracking app.")
 
-                # Rename columns for display
-                col_rename = {"date": "Date", "other": "Other", "notes": "Notes"}
-                col_rename.update({c: f"{lbl} ({unit})" for c, (lbl, unit) in LOG_COLS.items()})
-                display_df = display_df.rename(columns=col_rename)
+            metric_cols = st.columns(min(4, len(available)))
+            for i, (col, (name, unit)) in enumerate(available.items()):
+                recent = df[col].dropna().tail(14)
+                avg = recent[recent > 0].mean()
+                metric_cols[i % 4].metric(name, f"{avg:.1f} {unit}" if pd.notna(avg) else "—")
 
-                st.dataframe(display_df.reset_index(drop=True), use_container_width=True, hide_index=True)
-
-        # ── SUB-TAB: APPLE HEALTH VITAMINS ────────────────────────────────────
-        with subtab_ah:
-            st.caption("Vitamin and mineral data sourced from your Apple Health export. "
-                       "Only available if a food tracking app (e.g. Cronometer, MyFitnessPal) "
-                       "syncs micronutrient data to Apple Health.")
-
-            # Display metadata for Apple Health vitamin columns
-            AH_VITAMINS = {
-                "vit_a":     ("Vitamin A",   "mcg"),
-                "vit_c":     ("Vitamin C",   "mg"),
-                "vit_d":     ("Vitamin D",   "mcg"),
-                "vit_b6":    ("Vitamin B6",  "mg"),
-                "vit_b12":   ("Vitamin B12", "mcg"),
-                "iron":      ("Iron",        "mg"),
-                "magnesium": ("Magnesium",   "mg"),
-                "zinc":      ("Zinc",        "mg"),
-                "calcium":   ("Calcium",     "mg"),
-                "potassium": ("Potassium",   "mg"),
-                "folate":    ("Folate",      "mcg"),
-                "omega3":    ("Omega-3",     "g"),
-            }
-
-            # Find which columns actually have data in the dashboard cache
-            available = {
-                col: info for col, info in AH_VITAMINS.items()
-                if col in df.columns and df[col].notna().any() and df[col].sum() > 0
-            }
-
-            if not available:
-                st.info(
-                    "No vitamin or mineral data found in your Apple Health export. "
-                    "To see data here, use a food tracking app that logs micronutrients "
-                    "and syncs to Apple Health, then ask your coach to re-run the data sync."
-                )
-            else:
-                st.subheader("14-Day Averages")
-                metric_cols = st.columns(min(4, len(available)))
-                for i, (col, (name, unit)) in enumerate(available.items()):
-                    recent = df[col].dropna().tail(14)
-                    avg = recent[recent > 0].mean()
-                    metric_cols[i % 4].metric(name, f"{avg:.1f} {unit}" if pd.notna(avg) else "—")
-
-                st.divider()
-
-                # Recent daily values table
-                st.subheader("Daily Values")
-                ah_cols = ["date"] + list(available.keys())
-                ah_df = df[[c for c in ah_cols if c in df.columns]].copy()
-                ah_df = ah_df[ah_df[list(available.keys())].replace(0, pd.NA).notna().any(axis=1)]
-                ah_df = ah_df.sort_values("date", ascending=False).head(30).copy()
-                ah_df["date"] = ah_df["date"].dt.strftime("%d %b %Y")
-                ah_df = ah_df.rename(columns={
-                    col: f"{name} ({unit})" for col, (name, unit) in available.items()
-                } | {"date": "Date"})
-                # Replace 0 with None for clean display
-                for col in ah_df.columns:
-                    if col != "Date":
-                        ah_df[col] = ah_df[col].replace(0, None)
-                st.dataframe(ah_df.reset_index(drop=True), use_container_width=True, hide_index=True)
+            ah_cols = ["date"] + list(available.keys())
+            ah_df = df[[c for c in ah_cols if c in df.columns]].copy()
+            ah_df = ah_df[ah_df[list(available.keys())].replace(0, pd.NA).notna().any(axis=1)]
+            ah_df = ah_df.sort_values("date", ascending=False).head(30).copy()
+            ah_df["date"] = ah_df["date"].dt.strftime("%d %b %Y")
+            ah_df = ah_df.rename(columns={col: f"{name} ({unit})" for col, (name, unit) in available.items()} | {"date": "Date"})
+            for col in ah_df.columns:
+                if col != "Date":
+                    ah_df[col] = ah_df[col].replace(0, None)
+            st.dataframe(ah_df.reset_index(drop=True), use_container_width=True, hide_index=True)
 
     # ── TAB 4: RECOMMENDATIONS ────────────────────────────────────────────────
     with tab4:
