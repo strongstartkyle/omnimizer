@@ -387,6 +387,59 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         fig_ps.update_layout(height=300, coloraxis_showscale=False, yaxis=dict(range=[0, 100]))
         st.plotly_chart(fig_ps, use_container_width=True)
 
+        # ── Sub-score breakdown ────────────────────────────────────────────────
+        st.divider()
+        st.subheader("What's driving your score?")
+        st.caption("Each metric scores 0–100. The composite is a weighted average. "
+                   "Low sub-scores show exactly where to focus.")
+
+        SUB_META = {
+            'weight_sub': ('⚖️ Weight',  'weight_pct_change', '35%'),
+            'cal_sub':    ('🔥 Calories', 'cal_dev',           '25%'),
+            'steps_sub':  ('👟 Steps',    'steps_dev',         '15%'),
+            'water_sub':  ('💧 Water',    'water_dev',         '15%'),
+            'sleep_sub':  ('😴 Sleep',    'sleep_dev',         '10%'),
+        }
+
+        # Latest sub-score cards
+        latest_scored = df.dropna(subset=['composite_score'])
+        if not latest_scored.empty:
+            last = latest_scored.iloc[-1]
+            card_cols = st.columns(5)
+            for i, (sub_col, (label, dev_col, weight)) in enumerate(SUB_META.items()):
+                score = last.get(sub_col)
+                dev   = last.get(dev_col)
+                if pd.notna(score):
+                    delta = f"{dev:+.1f}% vs target" if pd.notna(dev) else None
+                    card_cols[i].metric(f"{label}\n({weight})", f"{score:.0f} / 100", delta)
+                else:
+                    card_cols[i].metric(f"{label}\n({weight})", "—")
+
+        # Sub-score trend lines
+        COLORS = {
+            'weight_sub': 'royalblue',
+            'cal_sub':    'tomato',
+            'steps_sub':  'seagreen',
+            'water_sub':  'deepskyblue',
+            'sleep_sub':  'mediumpurple',
+        }
+        fig_bd = go.Figure()
+        fig_bd.add_hrect(y0=80, y1=100, fillcolor="green",  opacity=0.05, line_width=0)
+        fig_bd.add_hrect(y0=65, y1=80,  fillcolor="orange", opacity=0.05, line_width=0)
+        fig_bd.add_hrect(y0=0,  y1=65,  fillcolor="red",    opacity=0.05, line_width=0)
+        for col, (label, _, _) in SUB_META.items():
+            if col in df.columns:
+                fig_bd.add_trace(go.Scatter(
+                    x=df['date'], y=df[col], name=label, mode='lines',
+                    line=dict(color=COLORS[col], width=1.5)
+                ))
+        fig_bd.update_layout(
+            xaxis_title="Date", yaxis_title="Sub-Score (0–100)",
+            yaxis=dict(range=[0, 100]), hovermode="x unified", height=320,
+            legend=dict(orientation="h", y=1.12)
+        )
+        st.plotly_chart(fig_bd, use_container_width=True)
+
     # ── TAB 6: MACROCYCLE ─────────────────────────────────────────────────────
     with tab6:
         st.header("🗓️ Macrocycle Overview")
