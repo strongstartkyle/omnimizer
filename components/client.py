@@ -6,6 +6,19 @@ import io
 from datetime import datetime, date
 from supabase_client import get_supabase
 
+# ── Plotly dark theme (Axiom palette) ────────────────────────────────────────
+_DARK = dict(
+    paper_bgcolor='#1C1C1C',
+    plot_bgcolor='#1C1C1C',
+    font=dict(color='#F5F5F5', family='Barlow, sans-serif'),
+    legend=dict(bgcolor='rgba(0,0,0,0)', font=dict(color='#787878', size=11)),
+)
+_AX = dict(
+    gridcolor='rgba(255,255,255,0.06)',
+    linecolor='rgba(255,255,255,0.11)',
+    color='#787878',
+    zerolinecolor='rgba(255,255,255,0.06)',
+)
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,11 +114,12 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         st.subheader("⚖️ Weight")
         fig_w = go.Figure()
         fig_w.add_trace(go.Scatter(x=df['date'], y=df['weight'], name='Daily', mode='lines',
-                                   line=dict(color='lightblue', width=1), opacity=0.5))
+                                   line=dict(color='rgba(200,16,46,0.35)', width=1), opacity=0.8))
         fig_w.add_trace(go.Scatter(x=df['date'], y=df['weight_avg'], name='14-Day Avg', mode='lines',
-                                   line=dict(color='royalblue', width=2.5)))
-        fig_w.update_layout(xaxis_title="Date", yaxis_title="lb", hovermode="x unified", height=320,
-                            legend=dict(orientation="h", y=1.1))
+                                   line=dict(color='#C8102E', width=2.5)))
+        fig_w.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"), yaxis=dict(**_AX, title="lb"),
+                            hovermode="x unified", height=320,
+                            legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878')))
         st.plotly_chart(fig_w, use_container_width=True)
 
         wchg = latest.get('weight_pct_change')
@@ -123,12 +137,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         with c1:
             st.subheader("🔥 Calories")
             fig_c = go.Figure()
-            fig_c.add_trace(go.Bar(x=df['date'], y=df['calories'], name='Daily', marker_color='lightsalmon', opacity=0.5))
+            fig_c.add_trace(go.Bar(x=df['date'], y=df['calories'], name='Daily', marker_color='rgba(200,16,46,0.3)', opacity=0.8))
             fig_c.add_trace(go.Scatter(x=df['date'], y=df['calories_avg'], name='14-Day Avg', mode='lines',
-                                       line=dict(color='tomato', width=2.5)))
-            fig_c.add_hline(y=targets.get('calories', 2500), line_dash="dash", line_color="red", annotation_text="Target")
-            fig_c.update_layout(xaxis_title="Date", yaxis_title="kcal", hovermode="x unified", height=300,
-                                legend=dict(orientation="h", y=1.1))
+                                       line=dict(color='#C8102E', width=2.5)))
+            fig_c.add_hline(y=targets.get('calories', 2500), line_dash="dash", line_color="rgba(245,245,245,0.3)", annotation_text="Target")
+            fig_c.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"), yaxis=dict(**_AX, title="kcal"),
+                                hovermode="x unified", height=300,
+                                legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878')))
             st.plotly_chart(fig_c, use_container_width=True)
 
             cal_dev = latest.get('cal_dev')
@@ -146,12 +161,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         with c2:
             st.subheader("👟 Steps")
             fig_s = go.Figure()
-            fig_s.add_trace(go.Bar(x=df['date'], y=df['steps'], name='Daily', marker_color='lightgreen', opacity=0.5))
+            fig_s.add_trace(go.Bar(x=df['date'], y=df['steps'], name='Daily', marker_color='rgba(245,245,245,0.12)', opacity=0.8))
             fig_s.add_trace(go.Scatter(x=df['date'], y=df['steps_avg'], name='14-Day Avg', mode='lines',
-                                       line=dict(color='seagreen', width=2.5)))
-            fig_s.add_hline(y=targets.get('steps', 8000), line_dash="dash", line_color="green", annotation_text="Target")
-            fig_s.update_layout(xaxis_title="Date", yaxis_title="Steps", hovermode="x unified", height=300,
-                                legend=dict(orientation="h", y=1.1))
+                                       line=dict(color='#F5F5F5', width=2.5)))
+            fig_s.add_hline(y=targets.get('steps', 8000), line_dash="dash", line_color="rgba(200,16,46,0.6)", annotation_text="Target")
+            fig_s.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"), yaxis=dict(**_AX, title="Steps"),
+                                hovermode="x unified", height=300,
+                                legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878')))
             st.plotly_chart(fig_s, use_container_width=True)
 
             steps_dev = latest.get('steps_dev')
@@ -168,12 +184,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         if 'sleep_avg' in df.columns:
             st.subheader("😴 Sleep")
             fig_sl = go.Figure()
-            fig_sl.add_trace(go.Bar(x=df['date'], y=df['sleep'], name='Daily', marker_color='plum', opacity=0.5))
+            fig_sl.add_trace(go.Bar(x=df['date'], y=df['sleep'], name='Daily', marker_color='rgba(120,120,120,0.25)', opacity=0.8))
             fig_sl.add_trace(go.Scatter(x=df['date'], y=df['sleep_avg'], name='14-Day Avg', mode='lines',
-                                        line=dict(color='purple', width=2.5)))
-            fig_sl.add_hline(y=targets.get('sleep', 7.5), line_dash="dash", line_color="purple", annotation_text="Target")
-            fig_sl.update_layout(xaxis_title="Date", yaxis_title="Hours", hovermode="x unified", height=300,
-                                 legend=dict(orientation="h", y=1.1))
+                                        line=dict(color='#787878', width=2.5)))
+            fig_sl.add_hline(y=targets.get('sleep', 7.5), line_dash="dash", line_color="rgba(245,245,245,0.3)", annotation_text="Target")
+            fig_sl.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"), yaxis=dict(**_AX, title="Hours"),
+                                 hovermode="x unified", height=300,
+                                 legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878')))
             st.plotly_chart(fig_sl, use_container_width=True)
 
             sleep_dev = latest.get('sleep_dev')
@@ -202,12 +219,13 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
             fig_wat = go.Figure()
             fig_wat.add_trace(go.Bar(x=df['date'], y=df['water'], name='Daily Water',
-                                     marker_color='lightcyan', opacity=0.6))
+                                     marker_color='rgba(200,16,46,0.25)', opacity=0.8))
             fig_wat.add_trace(go.Scatter(x=df['date'], y=df['water_avg'], name='14-Day Avg',
-                                         mode='lines', line=dict(color='deepskyblue', width=2.5)))
-            fig_wat.add_hline(y=target_water, line_dash="dash", line_color="blue", annotation_text="Target")
-            fig_wat.update_layout(xaxis_title="Date", yaxis_title="ml", hovermode="x unified", height=380,
-                                  legend=dict(orientation="h", y=1.1))
+                                         mode='lines', line=dict(color='#C8102E', width=2.5)))
+            fig_wat.add_hline(y=target_water, line_dash="dash", line_color="rgba(245,245,245,0.3)", annotation_text="Target")
+            fig_wat.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"), yaxis=dict(**_AX, title="ml"),
+                                  hovermode="x unified", height=380,
+                                  legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878')))
             st.plotly_chart(fig_wat, use_container_width=True)
 
             # Hydration compliance
@@ -423,9 +441,10 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         fig_cs.add_hrect(y0=65, y1=80,  fillcolor="orange", opacity=0.08, line_width=0, annotation_text="Monitor",   annotation_position="top left")
         fig_cs.add_hrect(y0=0,  y1=65,  fillcolor="red",    opacity=0.08, line_width=0, annotation_text="Action",    annotation_position="top left")
         fig_cs.add_trace(go.Scatter(x=df['date'], y=df['composite_score'], mode='lines+markers',
-                                    line=dict(color='mediumpurple', width=2), marker=dict(size=4)))
-        fig_cs.update_layout(xaxis_title="Date", yaxis_title="Wellness Score (0–100)",
-                             yaxis=dict(range=[0, 100]), hovermode="x unified", height=360)
+                                    line=dict(color='#C8102E', width=2), marker=dict(size=4, color='#C8102E')))
+        fig_cs.update_layout(**_DARK, xaxis=dict(**_AX, title="Date"),
+                             yaxis=dict(**_AX, title="Wellness Score (0–100)", range=[0, 100]),
+                             hovermode="x unified", height=360)
         st.plotly_chart(fig_cs, use_container_width=True)
 
         # Per-period bar
@@ -435,7 +454,8 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                         range_color=[0, 100],
                         title="Avg Wellness Score per 2-Week Period",
                         labels={'composite_score': 'Avg Score', 'period_label': 'Period'})
-        fig_ps.update_layout(height=300, coloraxis_showscale=False, yaxis=dict(range=[0, 100]))
+        fig_ps.update_layout(**_DARK, xaxis=dict(**_AX), yaxis=dict(**_AX, range=[0, 100]),
+                             height=300, coloraxis_showscale=False)
         st.plotly_chart(fig_ps, use_container_width=True)
 
         # ── Sub-score breakdown ────────────────────────────────────────────────
@@ -468,11 +488,11 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         # Sub-score trend lines
         COLORS = {
-            'weight_sub': 'royalblue',
-            'cal_sub':    'tomato',
-            'steps_sub':  'seagreen',
-            'water_sub':  'deepskyblue',
-            'sleep_sub':  'mediumpurple',
+            'weight_sub': '#C8102E',
+            'cal_sub':    '#F5F5F5',
+            'steps_sub':  '#787878',
+            'water_sub':  '#E85D04',
+            'sleep_sub':  '#3C3C3C',
         }
         fig_bd = go.Figure()
         fig_bd.add_hrect(y0=80, y1=100, fillcolor="green",  opacity=0.05, line_width=0)
@@ -485,9 +505,10 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                     line=dict(color=COLORS[col], width=1.5)
                 ))
         fig_bd.update_layout(
-            xaxis_title="Date", yaxis_title="Sub-Score (0–100)",
-            yaxis=dict(range=[0, 100]), hovermode="x unified", height=320,
-            legend=dict(orientation="h", y=1.12)
+            **_DARK, xaxis=dict(**_AX, title="Date"),
+            yaxis=dict(**_AX, title="Sub-Score (0–100)", range=[0, 100]),
+            hovermode="x unified", height=320,
+            legend=dict(orientation="h", y=1.12, bgcolor='rgba(0,0,0,0)', font=dict(color='#787878'))
         )
         st.plotly_chart(fig_bd, use_container_width=True)
 
@@ -526,5 +547,6 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
         fig_pw = px.line(df, x='date', y='weight_avg', color='period_label',
                          title="Weight Trend Across Periods",
                          labels={'weight_avg': 'Avg Weight (lb)', 'date': 'Date', 'period_label': 'Period'})
-        fig_pw.update_layout(height=340, hovermode="x unified")
+        fig_pw.update_layout(**_DARK, xaxis=dict(**_AX), yaxis=dict(**_AX),
+                             height=340, hovermode="x unified")
         st.plotly_chart(fig_pw, use_container_width=True)
