@@ -181,13 +181,15 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
 
         # Column metadata: {db_col: (display_label, unit)}
         LOG_COLS = {
-            "vitamin_d":   ("Vit D",   "IU"),
-            "vitamin_c":   ("Vit C",   "mg"),
-            "vitamin_b12": ("B12",     "mcg"),
-            "omega3":      ("Omega-3", "mg"),
-            "magnesium":   ("Mg",      "mg"),
-            "zinc":        ("Zn",      "mg"),
-            "iron":        ("Fe",      "mg"),
+            "vitamin_d":   ("Vit D",     "IU"),
+            "vitamin_c":   ("Vit C",     "mg"),
+            "vitamin_b12": ("B12",       "mcg"),
+            "omega3":      ("Omega-3",   "mg"),
+            "magnesium":   ("Mg",        "mg"),
+            "zinc":        ("Zn",        "mg"),
+            "iron":        ("Fe",        "mg"),
+            "sodium":      ("Sodium",    "mg"),
+            "potassium":   ("Potassium", "mg"),
         }
 
         # ── Log form ──────────────────────────────────────────────────────────
@@ -201,9 +203,11 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                     vit_b12  = st.number_input("Vitamin B12 (mcg)", min_value=0, step=10,  value=0)
                     omega3   = st.number_input("Omega-3 (mg)",      min_value=0, step=100, value=0)
                 with col2:
-                    magnesium = st.number_input("Magnesium (mg)", min_value=0, step=50, value=0)
-                    zinc      = st.number_input("Zinc (mg)",      min_value=0, step=5,  value=0)
-                    iron      = st.number_input("Iron (mg)",      min_value=0, step=5,  value=0)
+                    magnesium = st.number_input("Magnesium (mg)",  min_value=0, step=50,  value=0)
+                    zinc      = st.number_input("Zinc (mg)",       min_value=0, step=5,   value=0)
+                    iron      = st.number_input("Iron (mg)",       min_value=0, step=5,   value=0)
+                    sodium    = st.number_input("Sodium (mg)",     min_value=0, step=100, value=0)
+                    potassium = st.number_input("Potassium (mg)",  min_value=0, step=100, value=0)
                     other     = st.text_input("Other (free text)")
                 notes = st.text_area("Notes", placeholder="e.g. took with food, forgot evening dose...")
                 submitted = st.form_submit_button("Save Entry")
@@ -219,6 +223,8 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                         "magnesium": magnesium,
                         "zinc": zinc,
                         "iron": iron,
+                        "sodium": sodium,
+                        "potassium": potassium,
                         "other": other,
                         "notes": notes,
                     }
@@ -279,6 +285,7 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             "zinc":      ("Zinc",        "mg"),
             "calcium":   ("Calcium",     "mg"),
             "potassium": ("Potassium",   "mg"),
+            "sodium":    ("Sodium",      "mg"),
             "folate":    ("Folate",      "mcg"),
             "omega3":    ("Omega-3",     "g"),
         }

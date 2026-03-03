@@ -24,6 +24,7 @@ METRICS_MAP = {
     "HKQuantityTypeIdentifierDietaryZinc":           ("zinc",      "sum"),
     "HKQuantityTypeIdentifierDietaryCalcium":        ("calcium",   "sum"),
     "HKQuantityTypeIdentifierDietaryPotassium":      ("potassium", "sum"),
+    "HKQuantityTypeIdentifierDietarySodium":         ("sodium",    "sum"),
     "HKQuantityTypeIdentifierDietaryFolate":         ("folate",    "sum"),
     "HKQuantityTypeIdentifierDietaryOmega3FattyAcids": ("omega3",  "sum"),
     # Sleep is handled separately via HKCategoryTypeIdentifierSleepAnalysis
@@ -33,7 +34,7 @@ METRICS_MAP = {
 # Vitamin/mineral column names (subset of METRICS_MAP values)
 VITAMIN_COLS = [
     "vit_a", "vit_c", "vit_d", "vit_b6", "vit_b12",
-    "iron", "magnesium", "zinc", "calcium", "potassium", "folate", "omega3",
+    "iron", "magnesium", "zinc", "calcium", "potassium", "sodium", "folate", "omega3",
 ]
 
 STEP_TYPE = "HKQuantityTypeIdentifierStepCount"
