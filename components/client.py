@@ -108,6 +108,16 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                             legend=dict(orientation="h", y=1.1))
         st.plotly_chart(fig_w, use_container_width=True)
 
+        wchg = latest.get('weight_pct_change')
+        target_wchg_2wk = targets.get('weight_change_pct_per_week', -0.75) * 2
+        if pd.notna(wchg):
+            if abs(wchg - target_wchg_2wk) <= 0.3:
+                st.success(f"✅ Weight trending as planned — {wchg:.2f}% change over 14 days (goal: {target_wchg_2wk:.2f}%)")
+            elif wchg > target_wchg_2wk:
+                st.warning(f"⚠️ Weight loss slower than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
+            else:
+                st.warning(f"⚠️ Weight dropping faster than target — {wchg:.2f}% change vs {target_wchg_2wk:.2f}% goal")
+
         c1, c2 = st.columns(2)
 
         with c1:
@@ -121,6 +131,18 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
                                 legend=dict(orientation="h", y=1.1))
             st.plotly_chart(fig_c, use_container_width=True)
 
+            cal_dev = latest.get('cal_dev')
+            cal_avg = latest.get('calories_avg', 0)
+            target_cal = targets.get('calories', 2500)
+            days_on_cal = (df['calories'].tail(14).between(target_cal * 0.9, target_cal * 1.1)).sum()
+            if pd.notna(cal_dev):
+                if abs(cal_dev) <= 5:
+                    st.success(f"✅ Calories on target — {cal_avg:.0f} kcal avg, {days_on_cal}/14 days within 10%")
+                elif cal_dev < 0:
+                    st.warning(f"⚠️ {abs(cal_dev):.1f}% below target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
+                else:
+                    st.warning(f"⚠️ {cal_dev:.1f}% above target — {cal_avg:.0f} kcal avg vs {target_cal} goal, {days_on_cal}/14 days on track")
+
         with c2:
             st.subheader("👟 Steps")
             fig_s = go.Figure()
@@ -131,6 +153,16 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             fig_s.update_layout(xaxis_title="Date", yaxis_title="Steps", hovermode="x unified", height=300,
                                 legend=dict(orientation="h", y=1.1))
             st.plotly_chart(fig_s, use_container_width=True)
+
+            steps_dev = latest.get('steps_dev')
+            steps_avg = latest.get('steps_avg', 0)
+            target_steps = targets.get('steps', 8000)
+            days_on_steps = (df['steps'].tail(14) >= target_steps).sum()
+            if pd.notna(steps_dev):
+                if steps_dev >= 0:
+                    st.success(f"✅ Hitting step target — {steps_avg:.0f} avg, {days_on_steps}/14 days at or above goal")
+                else:
+                    st.warning(f"⚠️ {abs(steps_dev):.1f}% below step target — {steps_avg:.0f} avg vs {target_steps:,} goal, {days_on_steps}/14 days met")
 
         # Sleep
         if 'sleep_avg' in df.columns:
@@ -143,6 +175,16 @@ def render_client(client_id: str, client_name: str, coach_mode: bool = False):
             fig_sl.update_layout(xaxis_title="Date", yaxis_title="Hours", hovermode="x unified", height=300,
                                  legend=dict(orientation="h", y=1.1))
             st.plotly_chart(fig_sl, use_container_width=True)
+
+            sleep_dev = latest.get('sleep_dev')
+            sleep_avg = latest.get('sleep_avg', 0)
+            target_sleep = targets.get('sleep', 7.5)
+            days_on_sleep = (df['sleep'].tail(14) >= target_sleep * 0.9).sum()
+            if pd.notna(sleep_dev) and pd.notna(sleep_avg):
+                if sleep_dev >= -5:
+                    st.success(f"✅ Sleep on track — {sleep_avg:.1f} hrs avg, {days_on_sleep}/14 days meeting target")
+                else:
+                    st.warning(f"⚠️ {abs(sleep_dev):.1f}% below sleep target — {sleep_avg:.1f} hrs avg vs {target_sleep} goal, {days_on_sleep}/14 days met")
 
     # ── TAB 2: HYDRATION ──────────────────────────────────────────────────────
     with tab2:
